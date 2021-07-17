@@ -9,6 +9,8 @@ use Laravel\Jetstream\Events\AddingTeamMember;
 use Laravel\Jetstream\Events\TeamMemberAdded;
 use Laravel\Jetstream\Jetstream;
 use Laravel\Jetstream\Rules\Role;
+use Illuminate\Support\Facades\Log;
+
 
 class AddTeamMember implements AddsTeamMembers
 {
@@ -22,7 +24,9 @@ class AddTeamMember implements AddsTeamMembers
      * @return void
      */
     public function add($user, $team, string $email, string $role = null)
-    {
+    {   
+
+
         Gate::forUser($user)->authorize('addTeamMember', $team);
 
         $this->validate($team, $email, $role);
@@ -34,6 +38,8 @@ class AddTeamMember implements AddsTeamMembers
         $team->users()->attach(
             $newTeamMember, ['role' => $role]
         );
+
+       log::info($user->name.'added'.$newTeamMember->name.'to a team named '. $team->name);
 
         TeamMemberAdded::dispatch($team, $newTeamMember);
     }
