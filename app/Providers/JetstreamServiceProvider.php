@@ -9,9 +9,15 @@ use App\Actions\Jetstream\DeleteUser;
 use App\Actions\Jetstream\InviteTeamMember;
 use App\Actions\Jetstream\RemoveTeamMember;
 use App\Actions\Jetstream\UpdateTeamName;
+use App\Http\Middleware\LogLogin;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Jetstream\Jetstream;
 use Illuminate\Support\Facades\Route;
+use Laravel\Fortify\Fortify;
+use Illuminate\Http\Request;
+use Laravel\Fortify\Actions\AttemptToAuthenticate;
+use Laravel\Fortify\Actions\PrepareAuthenticatedSession;
+use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
 
 class JetstreamServiceProvider extends ServiceProvider
 {
@@ -44,6 +50,15 @@ class JetstreamServiceProvider extends ServiceProvider
         
         $this->configureRoutes();
 
+        Fortify::authenticateThrough(function (Request $request) {
+            return array_filter([
+                    config('fortify.limiters.login') ? null : EnsureLoginIsNotThrottled::class,
+                    RedirectIfTwoFactorAuthenticatable::class,
+                    AttemptToAuthenticate::class,
+                    PrepareAuthenticatedSession::class,
+                    LogLogin::class,
+            ]);
+        });
     }
 
     /**
@@ -67,6 +82,12 @@ class JetstreamServiceProvider extends ServiceProvider
             'create',
             'update',
         ])->description(__('Editor users have the ability to read, create, and update.'));
+    
+        Jetstream::role('anything', __('Anything'), [
+            'read',
+            'create',
+            'post:update',
+        ])->description(__('Anything users have the ability to read, create, and update.'));
     }
 
     protected function configureRoutes()

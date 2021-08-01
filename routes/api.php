@@ -15,5 +15,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    if($request->user()->tokenCan('create')){
     return $request->user();
+    }
+    abort(401);
 });
